@@ -940,6 +940,22 @@ async function cargarBiblia(){
 }
 
 /* =========================================================================
+   NORMALIZAR TEXTO DEL VERSÍCULO
+   La RV1909 usa mayúsculas en las primeras palabras de cada versículo
+   (ej. "Y PARTIENDOSE de allí"). Las convertimos a capitalización normal.
+   ========================================================================= */
+function normalizarTexto(texto){
+  if (!texto) return texto;
+  // Convertir secuencias de 2+ palabras en MAYÚSCULAS a Title Case / minúsculas
+  return texto.replace(/\b([A-ZÁÉÍÓÚÜÑ]{2,})\b/g, (match) => {
+    // Conservar abreviaturas de una sola letra (ej. "A", "Y", "O") sin cambiar
+    if (match.length === 1) return match;
+    // Convertir a minúsculas y capitalizar solo la primera letra
+    return match.charAt(0) + match.slice(1).toLowerCase();
+  });
+}
+
+/* =========================================================================
    OBTENER CAPÍTULO DESDE DATOS EN MEMORIA
    Devuelve [{number, verse}] para el libro y capítulo indicados.
    ========================================================================= */
@@ -949,7 +965,7 @@ function obtenerCapituloLocal(libroIdx, capitulo){
   if (!libro) return null;
   const cap = libro.chapters[capitulo - 1]; // capítulos base 0
   if (!cap) return null;
-  return cap.map((texto, i) => ({ number: i + 1, verse: texto }));
+  return cap.map((texto, i) => ({ number: i + 1, verse: normalizarTexto(texto) }));
 }
 
 /* =========================================================================

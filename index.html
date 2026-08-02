@@ -932,14 +932,32 @@ function poblarSelectLibros(){
   sel.innerHTML = LIBROS.map(l => `<option value="${l.n}">${l.t}</option>`).join('');
 }
 
+// Números de libros para la Main API de GetBible (api.getbible.net/v2/rvr60/{nr}/{cap}.json)
+const LIBRO_NR = {
+  'Génesis':1,'Éxodo':2,'Levítico':3,'Números':4,'Deuteronomio':5,'Josué':6,
+  'Jueces':7,'Rut':8,'1 Samuel':9,'2 Samuel':10,'1 Reyes':11,'2 Reyes':12,
+  '1 Crónicas':13,'2 Crónicas':14,'Esdras':15,'Nehemías':16,'Ester':17,'Job':18,
+  'Salmos':19,'Proverbios':20,'Eclesiastés':21,'Cantares':22,'Isaías':23,
+  'Jeremías':24,'Lamentaciones':25,'Ezequiel':26,'Daniel':27,'Oseas':28,
+  'Joel':29,'Amós':30,'Abdías':31,'Jonás':32,'Miqueas':33,'Nahúm':34,
+  'Habacuc':35,'Sofonías':36,'Hageo':37,'Zacarías':38,'Malaquías':39,
+  'Mateo':40,'Marcos':41,'Lucas':42,'Juan':43,'Hechos':44,'Romanos':45,
+  '1 Corintios':46,'2 Corintios':47,'Gálatas':48,'Efesios':49,'Filipenses':50,
+  'Colosenses':51,'1 Tesalonicenses':52,'2 Tesalonicenses':53,'1 Timoteo':54,
+  '2 Timoteo':55,'Tito':56,'Filemón':57,'Hebreos':58,'Santiago':59,
+  '1 Pedro':60,'2 Pedro':61,'1 Juan':62,'2 Juan':63,'3 Juan':64,
+  'Judas':65,'Apocalipsis':66
+};
+
+// Main API: capítulo completo → {translation, book_name, chapter, verses:{nr:{book_nr,chapter,verse,text}}}
+const GETBIBLE_MAIN = 'https://api.getbible.net/v2';
+
 /* =========================================================================
-   BÚSQUEDA POR CITA — GetBible Query API
-   Formato: GET /v2/rvr60/{Libro capítulo:versículo-versículo}
-   La API devuelve un objeto con claves dinámicas por versículo.
+   BÚSQUEDA POR CITA — GetBible APIs
    ========================================================================= */
 async function buscarPorCita(){
-  const libroNombre = document.getElementById('select-libro').value;
-  const capitulo    = parseInt(document.getElementById('input-capitulo').value, 10);
+  const libroNombre  = document.getElementById('select-libro').value;
+  const capitulo     = parseInt(document.getElementById('input-capitulo').value, 10);
   const versiculoRaw = document.getElementById('input-versiculo').value.trim();
 
   if (!capitulo || capitulo < 1){
@@ -949,50 +967,84 @@ async function buscarPorCita(){
 
   mostrarCargando();
   try{
-    // Construimos la referencia: "Juan 3" para capítulo completo, o "Juan 3:16" / "Juan 3:16-18" para versículo
-    let referencia = `${libroNombre} ${capitulo}`;
-    if (versiculoRaw) referencia += `:${versiculoRaw}`;
+    let verses, libroReal, capReal;
 
-    const url = `${GETBIBLE_BASE}/${VERSION_GB}/${encodeURIComponent(referencia)}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('No se encontró esa cita. Revisa el libro, capítulo y versículo.');
-    const data = await resp.json();
+    if (versiculoRaw){
+      // Versículo o rango → Query API
+      const referencia = `${libroNombre} ${capitulo}:${versiculoRaw}`;
+      const url = `${GETBIBLE_BASE}/${VERSION_GB}/${encodeURIComponent(referencia)}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('No se encontró esa cita.');
+      const data = await resp.json();
+      verses = normalizarQueryAPI(data);
+      const meta = data[Object.keys(data)[0]];
+      libroReal = meta?.book_name || libroNombre;
+      capReal   = meta?.chapter   || capitulo;
+    } else {
+      // Capítulo completo → Main API (más confiable)
+      const nrLibro = LIBRO_NR[libroNombre];
+      if (!nrLibro) throw new Error('Libro no reconocido.');
+      const url = `${GETBIBLE_MAIN}/${VERSION_GB}/${nrLibro}/${capitulo}.json`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('No se encontró ese capítulo.');
+      const data = await resp.json();
+      verses = normalizarMainAPI(data);
+      libroReal = data.book_name || libroNombre;
+      capReal   = data.chapter   || capitulo;
+    }
 
-    // Normalizar respuesta de GetBible a formato interno {number, verse}
-    const verses = normalizarGetBible(data);
-    if (!verses || verses.length === 0) throw new Error('Esa cita no devolvió versículos.');
-
-    // Obtener nombre de libro y capítulo real desde la respuesta
-    const primeraClave = Object.keys(data)[0];
-    const metaCapitulo = data[primeraClave];
-    const libroReal = metaCapitulo?.book_name || libroNombre;
-    const capReal   = metaCapitulo?.chapter    || capitulo;
+    if (!verses || verses.length === 0) throw new Error('No se encontraron versículos.');
 
     activeChapterVerses = verses;
-    activeChapterRef = { libro: libroReal, libroSlug: libroNombre, capitulo: capReal };
-    multiSelectIndices = [];
-    activeVerseIndex = 0;
-    rangeSelectMode = false;
-    activeRangeEndIndex = -1;
-
-    // Si buscó un rango (ej. 16-18), marcar el rango visualmente
-    if (versiculoRaw && versiculoRaw.includes('-')){
-      activeRangeEndIndex = verses.length - 1;
-    }
+    activeChapterRef    = { libro: libroReal, libroSlug: libroNombre, capitulo: capReal };
+    multiSelectIndices  = [];
+    activeVerseIndex    = 0;
+    rangeSelectMode     = false;
+    activeRangeEndIndex = versiculoRaw && versiculoRaw.includes('-') ? verses.length - 1 : -1;
 
     mostrarResultadosVacios();
     proyectarVersiculoActivo();
     renderMain();
   }catch(err){
-    mostrarError(err.message || 'Ocurrió un error al buscar la cita.');
+    mostrarError(err.message || 'Ocurrió un error al buscar.');
   }
 }
 
 /* =========================================================================
-   BÚSQUEDA POR PALABRA — sin paginación (GetBible no tiene búsqueda de texto)
-   Usamos una búsqueda local entre los versículos ya cargados, y como fallback
-   mostramos un mensaje explicando cómo buscar por cita exacta.
+   NORMALIZAR RESPUESTA DE GETBIBLE
    ========================================================================= */
+// Main API: { verses: { "1": { verse: 1, text: "..." }, ... } }
+function normalizarMainAPI(data){
+  const vMap = data.verses;
+  if (!vMap || typeof vMap !== 'object') return [];
+  return Object.values(vMap)
+    .map(v => ({ number: Number(v.verse), verse: (v.text || '').trim() }))
+    .filter(v => v.verse)
+    .sort((a, b) => a.number - b.number);
+}
+
+// Query API: { "rvr60_43_3": { book_name, chapter, verses: { "16": { verse:16, text:"..." } } } }
+function normalizarQueryAPI(data){
+  const verses = [];
+  for (const key of Object.keys(data)){
+    const cap = data[key];
+    if (!cap) continue;
+    const vMap = cap.verses || cap.ref || {};
+    for (const vKey of Object.keys(vMap)){
+      const v = vMap[vKey];
+      if (v && typeof v === 'object'){
+        verses.push({
+          number: Number(v.verse || vKey),
+          verse:  (v.text || v.verse_text || '').trim()
+        });
+      }
+    }
+  }
+  return verses.filter(v => v.verse).sort((a, b) => a.number - b.number);
+}
+
+// Alias para compatibilidad con cargarCapitulo
+function normalizarGetBible(data){ return normalizarQueryAPI(data); }
 async function buscarPorPalabra(pagina){
   const palabra = document.getElementById('input-palabra').value.trim();
   if (!palabra){
@@ -1036,13 +1088,26 @@ function normalizarGetBible(data){
   const verses = [];
   for (const capKey of Object.keys(data)){
     const capData = data[capKey];
-    if (!capData || !capData.verses) continue;
-    for (const vKey of Object.keys(capData.verses)){
-      const v = capData.verses[vKey];
-      verses.push({ number: v.verse, verse: v.text.trim() });
+    if (!capData) continue;
+
+    // GetBible Query API usa el campo "ref" para los versículos
+    // (no "verses" como asumimos inicialmente)
+    const verseMap = capData.ref || capData.verses || capData;
+    if (typeof verseMap !== 'object') continue;
+
+    for (const vKey of Object.keys(verseMap)){
+      const v = verseMap[vKey];
+      // Aceptamos tanto {verse, text} como texto directo
+      if (v && typeof v === 'object' && (v.text || v.verse_text)){
+        verses.push({
+          number: Number(v.verse || v.number || vKey),
+          verse:  (v.text || v.verse_text || '').trim()
+        });
+      } else if (typeof v === 'string') {
+        verses.push({ number: Number(vKey), verse: v.trim() });
+      }
     }
   }
-  // Ordenar por número de versículo
   verses.sort((a, b) => a.number - b.number);
   return verses;
 }
@@ -1053,25 +1118,23 @@ function normalizarGetBible(data){
 async function cargarCapitulo(libroSlug, capitulo, numeroVersiculo, numeroVersiculoFin){
   mostrarCargando();
   try{
-    const referencia = `${libroSlug} ${capitulo}`;
-    const url = `${GETBIBLE_BASE}/${VERSION_GB}/${encodeURIComponent(referencia)}`;
+    const nrLibro = LIBRO_NR[libroSlug];
+    if (!nrLibro) throw new Error('Libro no reconocido.');
+    const url = `${GETBIBLE_MAIN}/${VERSION_GB}/${nrLibro}/${capitulo}.json`;
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('No se pudo cargar ese capítulo.');
     const data = await resp.json();
 
-    const verses = normalizarGetBible(data);
+    const verses = normalizarMainAPI(data);
     if (!verses || verses.length === 0) throw new Error('Capítulo sin versículos.');
 
-    const primeraClave = Object.keys(data)[0];
-    const meta = data[primeraClave];
-
     activeChapterVerses = verses;
-    activeChapterRef = { libro: meta?.book_name || libroSlug, libroSlug, capitulo };
-    multiSelectIndices = [];
+    activeChapterRef    = { libro: data.book_name || libroSlug, libroSlug, capitulo };
+    multiSelectIndices  = [];
 
     const idx = verses.findIndex(v => v.number === numeroVersiculo);
     activeVerseIndex = idx >= 0 ? idx : 0;
-    rangeSelectMode = false;
+    rangeSelectMode  = false;
 
     if (numeroVersiculoFin != null){
       const endIdx = verses.findIndex(v => v.number === numeroVersiculoFin);

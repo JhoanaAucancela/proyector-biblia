@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyector de Versículos - Reina Valera 1960</title>
+<style>
+  :root{
+    --bg-deep:#161311;
+    --bg-panel:#1f1b18;
+    --bg-panel-raised:#272220;
+    --ink-warm:#f3eade;
+    --ink-dim:#a89c8e;
+    --accent:#c98a3a;
+    --accent-soft:#c98a3a33;
+    --confirm:#5fa881;
+    --line:#3a332c;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:var(--bg-deep);
+    color:var(--ink-warm);
+    font-family:var(--font-body);
+    overflow:hidden;
+  }
+
+  /* ===================== LANDING ===================== */
+  #view-landing{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2.5rem;
+    text-align:center;
+    padding:2rem;
+  }
+  #view-landing h1{
+    font-family:var(--font-display);
+    font-size:clamp(2rem,5vw,3.2rem);
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  #view-landing .eyebrow{
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:0.18em;
+    font-size:0.75rem;
+    font-weight:600;
+    margin-bottom:0.6rem;
+  }
+  .landing-options{
+    display:flex;
+    gap:1.5rem;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .landing-card{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:2rem 2.2rem;
+    width:260px;
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease;
+    text-align:left;
+  }
+  .landing-card:hover{
+    border-color:var(--accent);
+    transform:translateY(-2px);
+  }
+  .landing-card h2{
+    font-family:var(--font-display);
+    font-size:1.3rem;
+    margin:0 0 0.5rem;
+  }
+  .landing-card p{
+    color:var(--ink-dim);
+    font-size:0.9rem;
+    line-height:1.5;
+    margin:0;
+  }
+
+  /* ===================== VISTA OPERADOR ===================== */
+  #view-operator{
+    display:none;
+    height:100vh;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header"
+      "sidebar main"
+      "footer footer";
+  }
+  #view-operator.active{display:grid;}
+
+  .op-header{
+    grid-area:header;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0.9rem 1.4rem;
+    border-bottom:1px solid var(--line);
+    background:var(--bg-panel);
+  }
+  .op-header .brand{display:flex;align-items:baseline;gap:0.6rem;}
+  .op-header .brand b{font-family:var(--font-display);font-size:1.15rem;}
+  .op-header .brand span{color:var(--ink-dim);font-size:0.78rem;}
+
+  .btn{
+    font-family:var(--font-body);
+    border:1px solid var(--line);
+    background:var(--bg-panel-raised);
+    color:var(--ink-warm);
+    border-radius:8px;
+    padding:0.55rem 1rem;
+    font-size:0.85rem;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1c1410;
+    font-weight:600;
+  }
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  /* ===================== SIDEBAR: BUSCADOR ===================== */
+  .op-sidebar{
+    grid-area:sidebar;
+    border-right:1px solid var(--line);
+    background:var(--bg-panel);
+    overflow-y:auto;
+    padding:1.1rem;
+    display:flex;
+    flex-direction:column;
+    gap:1rem;
+  }
+  .tabs{
+    display:flex;
+    gap:0.4rem;
+    background:var(--bg-deep);
+    border-radius:10px;
+    padding:0.25rem;
+  }
+  .tab-btn{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--ink-dim);
+    padding:0.5rem 0.6rem;
+    border-radius:8px;
+    font-size:0.85rem;
+    cursor:pointer;
+    font-family:var(--font-body);
+  }
+  .tab-btn.active{
+    background:var(--bg-panel-raised);
+    color:var(--ink-warm);
+    font-weight:600;
+  }
+
+  .field-label{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--ink-dim);
+    margin-bottom:0.3rem;
+    display:block;
+  }
+  select, input[type=text], input[type=number]{
+    width:100%;
+    background:var(--bg-deep);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--ink-warm);
+    font-family:var(--font-body);
+    font-size:0.92rem;
+    padding:0.55rem 0.7rem;
+  }
+  select:focus, input:focus{outline:1px solid var(--accent);}
+
+  .ref-row{display:flex;gap:0.5rem;}
+  .ref-row > div{flex:1;}
+  .ref-row .narrow{flex:0 0 70px;}
+
+  .search-form{
+    background:var(--bg-panel-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0.9rem;
+    display:flex;
+    flex-direction:column;
+    gap:0.7rem;
+  }
+
+  .results-list{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:0.4rem;
+  }
+  .result-item{
+    background:var(--bg-panel-raised);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:0.6rem 0.7rem;
+    cursor:pointer;
+    font-size:0.85rem;
+    line-height:1.5;
+  }
+  .result-item:hover{border-color:var(--accent);}
+  .result-item .ref{
+    color:var(--accent);
+    font-weight:600;
+    font-size:0.78rem;
+    display:block;
+    margin-bottom:0.2rem;
+  }
+  .result-item .txt{color:var(--ink-dim);}
+  .results-empty{
+    color:var(--ink-dim);
+    font-size:0.85rem;
+    padding:0.8rem 0.3rem;
+    line-height:1.5;
+  }
+  .results-meta{
+    font-size:0.75rem;
+    color:var(--ink-dim);
+    padding:0 0.2rem;
+  }
+  .pager{
+    display:flex;
+    gap:0.5rem;
+    justify-content:space-between;
+  }
+  .pager .btn{flex:1;font-size:0.8rem;padding:0.45rem;}
+
+  .history-section h3{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--ink-dim);
+    margin:0 0 0.5rem;
+  }
+  .history-item{
+    padding:0.45rem 0.6rem;
+    border-radius:7px;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+    cursor:pointer;
+  }
+  .history-item:hover{background:var(--bg-panel-raised);color:var(--ink-warm);}
+
+  /* ===================== MAIN: VERSÍCULO ACTIVO ===================== */
+  .op-main{
+    grid-area:main;
+    padding:1.6rem;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:1.2rem;
+  }
+  .no-verse-msg{
+    margin:auto;
+    text-align:center;
+    color:var(--ink-dim);
+    max-width:380px;
+  }
+  .no-verse-msg h2{
+    font-family:var(--font-display);
+    color:var(--ink-warm);
+    font-size:1.4rem;
+  }
+  .active-verse-card{
+    background:var(--bg-panel);
+    border:1px solid var(--accent);
+    border-radius:14px;
+    padding:1.8rem 2rem;
+  }
+  .active-verse-card .ref-label{
+    font-family:var(--font-display);
+    color:var(--accent);
+    font-size:1.1rem;
+    margin-bottom:0.8rem;
+    font-weight:600;
+  }
+  .active-verse-card .verse-text{
+    font-family:var(--font-display);
+    font-size:1.6rem;
+    line-height:1.45;
+  }
+  .passage-controls{
+    display:flex;
+    gap:0.6rem;
+    flex-wrap:wrap;
+  }
+  .verse-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.4rem;
+  }
+  .verse-chip{
+    border:1px solid var(--line);
+    background:var(--bg-panel-raised);
+    color:var(--ink-dim);
+    border-radius:7px;
+    padding:0.35rem 0.7rem;
+    font-size:0.82rem;
+    cursor:pointer;
+  }
+  .verse-chip.active{
+    border-color:var(--accent);
+    color:var(--ink-warm);
+    background:var(--accent-soft);
+    font-weight:600;
+  }
+  .chapter-context{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:0.5rem;
+    flex:1;
+    overflow-y:auto;
+  }
+  .chapter-context .label{
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--ink-dim);
+    padding:0.5rem 0.8rem 0.3rem;
+  }
+  .ctx-verse-row{
+    padding:0.5rem 0.9rem;
+    border-radius:8px;
+    font-size:0.88rem;
+    color:var(--ink-dim);
+    cursor:pointer;
+    border-left:3px solid transparent;
+    line-height:1.5;
+  }
+  .ctx-verse-row:hover{background:var(--bg-panel-raised);}
+  .ctx-verse-row.current{
+    color:var(--ink-warm);
+    background:var(--accent-soft);
+    border-left-color:var(--accent);
+  }
+  .ctx-verse-row.checked{
+    background:#5fa88122;
+    border-left-color:var(--confirm);
+  }
+  .ctx-verse-row .vnum{
+    color:var(--accent);
+    font-weight:600;
+    margin-right:0.4rem;
+  }
+
+  .op-footer{
+    grid-area:footer;
+    border-top:1px solid var(--line);
+    background:var(--bg-panel);
+    padding:0.7rem 1.4rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:0.78rem;
+    color:var(--ink-dim);
+  }
+  .kbd{
+    display:inline-block;
+    background:var(--bg-panel-raised);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:0.1rem 0.4rem;
+    font-family:ui-monospace, monospace;
+    font-size:0.75rem;
+    margin:0 0.15rem;
+  }
+
+  .loading-spinner{
+    color:var(--ink-dim);
+    font-size:0.85rem;
+    padding:0.6rem;
+  }
+  .error-msg{
+    color:#e0584a;
+    font-size:0.85rem;
+    padding:0.6rem;
+    line-height:1.5;
+  }
+
+  /* ===================== PERSONALIZACIÓN DE COLORES ===================== */
+  .style-panel{
+    background:var(--bg-panel-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0.8rem 0.9rem;
+    display:flex;
+    flex-direction:column;
+    gap:0.6rem;
+  }
+  .style-panel .style-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:0.6rem;
+  }
+  .style-panel .style-row label{
+    font-size:0.82rem;
+    color:var(--ink-dim);
+  }
+  .color-input-wrap{
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+  }
+  input[type=color]{
+    width:34px;
+    height:30px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:none;
+    cursor:pointer;
+    padding:0;
+  }
+  .swatch-row{
+    display:flex;
+    gap:0.4rem;
+    flex-wrap:wrap;
+  }
+  .swatch-preset{
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    cursor:pointer;
+    border:2px solid var(--line);
+  }
+  .swatch-preset:hover{border-color:var(--accent);}
+
+  /* ===================== SELECCIÓN MÚLTIPLE DE VERSÍCULOS ===================== */
+  .ctx-verse-row{
+    display:flex;
+    align-items:flex-start;
+    gap:0.5rem;
+  }
+  .ctx-verse-row input[type=checkbox]{
+    margin-top:0.35rem;
+    accent-color:var(--accent);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .ctx-verse-row .vtext{
+    flex:1;
+    cursor:pointer;
+  }
+  .multi-select-bar{
+    display:none;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:10px;
+    padding:0.6rem 0.8rem;
+    font-size:0.82rem;
+    align-items:center;
+    justify-content:space-between;
+    gap:0.6rem;
+  }
+  .multi-select-bar.active{display:flex;}
+  .multi-select-bar .btn{font-size:0.78rem;padding:0.4rem 0.7rem;}
+
+  /* ===================== PROYECCIÓN ===================== */
+  #view-projector{
+    display:none;
+    height:100vh;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    background:var(--bg-deep);
+    position:relative;
+    padding:5vh 8vw;
+    overflow-y:auto;
+  }
+  #view-projector.active{display:flex;}
+  #projector-text{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(1.8rem, 4.2vw, 3.6rem);
+    line-height:1.45;
+    letter-spacing:-0.005em;
+    max-width:88vw;
+    white-space:pre-line;
+    transition:opacity .25s ease;
+  }
+  #projector-ref{
+    font-family:var(--font-body);
+    color:var(--accent);
+    font-size:clamp(1rem, 1.6vw, 1.3rem);
+    margin-top:2rem;
+    font-weight:600;
+    letter-spacing:0.02em;
+    transition:opacity .25s ease;
+  }
+  #projector-text.fade, #projector-ref.fade{opacity:0;}
+  .projector-exit-hint{
+    position:absolute;
+    bottom:1.2rem;
+    right:1.4rem;
+    color:#5a534a;
+    font-size:0.72rem;
+  }
+  .projector-empty{color:#4a4438;font-size:1.1rem;font-family:var(--font-body);}
+</style>
+</head>
+<body>
+
+<!-- ===================== LANDING ===================== -->
+<div id="view-landing">
+  <div>
+    <div class="eyebrow">Versículos bíblicos · Reina Valera 1960</div>
+    <h1>Proyector de versículos</h1>
+  </div>
+  <div class="landing-options">
+    <div class="landing-card" onclick="goToOperator()">
+      <h2>Panel de operador</h2>
+      <p>Busca por cita o por palabra clave y elige qué versículo proyectar.</p>
+    </div>
+    <div class="landing-card" onclick="goToProjector()">
+      <h2>Pantalla de proyección</h2>
+      <p>Abre esta vista en la TV o pantalla para la congregación.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== OPERADOR ===================== -->
+<div id="view-operator">
+  <div class="op-header">
+    <div class="brand">
+      <b>Panel de operador</b>
+      <span>Reina Valera 1960</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+      <button class="btn" onclick="openProjectorWindow()">Abrir proyección ↗</button>
+      <button class="btn" onclick="showLanding()">Salir</button>
+    </div>
+  </div>
+
+  <div class="op-sidebar">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-cita" onclick="switchTab('cita')">Buscar por cita</button>
+      <button class="tab-btn" id="tab-palabra" onclick="switchTab('palabra')">Buscar por palabra</button>
+    </div>
+
+    <!-- Buscador por cita -->
+    <div id="form-cita" class="search-form">
+      <div>
+        <label class="field-label">Libro</label>
+        <select id="select-libro"></select>
+      </div>
+      <div class="ref-row">
+        <div class="narrow">
+          <label class="field-label">Cap.</label>
+          <input type="number" id="input-capitulo" min="1" value="1">
+        </div>
+        <div>
+          <label class="field-label">Versículo(s) — opcional</label>
+          <input type="text" id="input-versiculo" placeholder="Ej. 16 o 16-18 (vacío = todo el capítulo)">
+        </div>
+      </div>
+      <button class="btn primary" onclick="buscarPorCita()">Buscar</button>
+    </div>
+
+    <!-- Buscador por palabra -->
+    <div id="form-palabra" class="search-form" style="display:none;">
+      <div>
+        <label class="field-label">Palabra o frase</label>
+        <input type="text" id="input-palabra" placeholder="Ej. amor, fe, esperanza...">
+      </div>
+      <button class="btn primary" onclick="buscarPorPalabra()">Buscar</button>
+    </div>
+
+    <div class="results-meta" id="results-meta"></div>
+    <div class="results-list" id="results-list">
+      <div class="results-empty">Busca una cita o una palabra para ver resultados aquí.</div>
+    </div>
+    <div class="pager" id="pager" style="display:none;">
+      <button class="btn" id="btn-prev-page" onclick="cambiarPagina(-1)">← Anterior</button>
+      <button class="btn" id="btn-next-page" onclick="cambiarPagina(1)">Siguiente →</button>
+    </div>
+
+    <div class="history-section">
+      <h3>Recientes</h3>
+      <div id="history-list"></div>
+    </div>
+
+    <div class="style-panel">
+      <h3 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink-dim);margin:0 0 0.2rem;">Apariencia de la proyección</h3>
+      <div class="style-row">
+        <label>Color de fondo</label>
+        <div class="color-input-wrap">
+          <input type="color" id="color-fondo" value="#161311" onchange="aplicarEstiloProyeccion()">
+        </div>
+      </div>
+      <div class="style-row">
+        <label>Color de letra</label>
+        <div class="color-input-wrap">
+          <input type="color" id="color-texto" value="#f3eade" onchange="aplicarEstiloProyeccion()">
+        </div>
+      </div>
+      <div class="swatch-row" id="presets-row"></div>
+      <button class="btn" style="margin-top:0.2rem;" onclick="restaurarEstiloPorDefecto()">Restaurar colores por defecto</button>
+    </div>
+  </div>
+
+  <div class="op-main" id="op-main"></div>
+
+  <div class="op-footer">
+    <div>
+      <span class="kbd">←</span>/<span class="kbd">→</span> moverse entre versículos &nbsp;·&nbsp;
+      click en el contexto para proyectar &nbsp;·&nbsp;
+      "+ Seleccionar rango" para proyectar varios versículos juntos
+    </div>
+    <div id="footer-ref" style="color:var(--ink-warm);font-weight:600;"></div>
+  </div>
+</div>
+
+<!-- ===================== PROYECCIÓN ===================== -->
+<div id="view-projector">
+  <div id="projector-text" class="projector-empty">Esperando versículo…</div>
+  <div id="projector-ref"></div>
+  <div class="projector-exit-hint">Esc para salir</div>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIGURACIÓN DE LA API
+   ========================================================================= */
+// GetBible Query API — sin API key, sin registro, soporta rvr60 (Reina Valera 1960)
+// Documentación: https://github.com/getbible/v2
+// Formato: https://query.getbible.net/v2/{traduccion}/{Libro capítulo:versículo}
+const GETBIBLE_BASE = 'https://query.getbible.net/v2';
+const VERSION_GB = 'rvr60';
+
+// Nombres de libros en español para la UI y para construir la referencia a la API.
+// GetBible acepta el nombre del libro en el idioma de la traducción.
+const PROJECTOR_CHANNEL = 'versiculos_projector_v1';
+const HISTORY_KEY = 'versiculos_historial_v1';
+const MAX_HISTORY = 12;
+
+// Libros con su nombre de visualización (t) y el nombre exacto para la API GetBible (n).
+// GetBible rvr60 usa nombres en español sin tildes en algunos casos — mantenemos
+// el nombre de visualización con tilde y el slug sin tilde para la URL.
+const LIBROS = [
+  {n:'Génesis', t:'Génesis'}, {n:'Éxodo', t:'Éxodo'}, {n:'Levítico', t:'Levítico'},
+  {n:'Números', t:'Números'}, {n:'Deuteronomio', t:'Deuteronomio'}, {n:'Josué', t:'Josué'},
+  {n:'Jueces', t:'Jueces'}, {n:'Rut', t:'Rut'}, {n:'1 Samuel', t:'1 Samuel'},
+  {n:'2 Samuel', t:'2 Samuel'}, {n:'1 Reyes', t:'1 Reyes'}, {n:'2 Reyes', t:'2 Reyes'},
+  {n:'1 Crónicas', t:'1 Crónicas'}, {n:'2 Crónicas', t:'2 Crónicas'}, {n:'Esdras', t:'Esdras'},
+  {n:'Nehemías', t:'Nehemías'}, {n:'Ester', t:'Ester'}, {n:'Job', t:'Job'},
+  {n:'Salmos', t:'Salmos'}, {n:'Proverbios', t:'Proverbios'}, {n:'Eclesiastés', t:'Eclesiastés'},
+  {n:'Cantares', t:'Cantares'}, {n:'Isaías', t:'Isaías'}, {n:'Jeremías', t:'Jeremías'},
+  {n:'Lamentaciones', t:'Lamentaciones'}, {n:'Ezequiel', t:'Ezequiel'}, {n:'Daniel', t:'Daniel'},
+  {n:'Oseas', t:'Oseas'}, {n:'Joel', t:'Joel'}, {n:'Amós', t:'Amós'},
+  {n:'Abdías', t:'Abdías'}, {n:'Jonás', t:'Jonás'}, {n:'Miqueas', t:'Miqueas'},
+  {n:'Nahúm', t:'Nahúm'}, {n:'Habacuc', t:'Habacuc'}, {n:'Sofonías', t:'Sofonías'},
+  {n:'Hageo', t:'Hageo'}, {n:'Zacarías', t:'Zacarías'}, {n:'Malaquías', t:'Malaquías'},
+  {n:'Mateo', t:'Mateo'}, {n:'Marcos', t:'Marcos'}, {n:'Lucas', t:'Lucas'},
+  {n:'Juan', t:'Juan'}, {n:'Hechos', t:'Hechos'}, {n:'Romanos', t:'Romanos'},
+  {n:'1 Corintios', t:'1 Corintios'}, {n:'2 Corintios', t:'2 Corintios'}, {n:'Gálatas', t:'Gálatas'},
+  {n:'Efesios', t:'Efesios'}, {n:'Filipenses', t:'Filipenses'}, {n:'Colosenses', t:'Colosenses'},
+  {n:'1 Tesalonicenses', t:'1 Tesalonicenses'}, {n:'2 Tesalonicenses', t:'2 Tesalonicenses'},
+  {n:'1 Timoteo', t:'1 Timoteo'}, {n:'2 Timoteo', t:'2 Timoteo'}, {n:'Tito', t:'Tito'},
+  {n:'Filemón', t:'Filemón'}, {n:'Hebreos', t:'Hebreos'}, {n:'Santiago', t:'Santiago'},
+  {n:'1 Pedro', t:'1 Pedro'}, {n:'2 Pedro', t:'2 Pedro'}, {n:'1 Juan', t:'1 Juan'},
+  {n:'2 Juan', t:'2 Juan'}, {n:'3 Juan', t:'3 Juan'}, {n:'Judas', t:'Judas'},
+  {n:'Apocalipsis', t:'Apocalipsis'}
+];
+
+/* =========================================================================
+   ESTADO
+   ========================================================================= */
+let activeChapterVerses = [];   // versículos del capítulo actualmente cargado
+let activeChapterRef = null;    // {libro, libroSlug, capitulo}
+let activeVerseIndex = -1;      // índice "ancla" dentro de activeChapterVerses (inicio del rango)
+let activeRangeEndIndex = -1;   // índice final del rango (-1 = sin rango, solo activeVerseIndex)
+let rangeSelectMode = false;    // true mientras el operador está eligiendo el final de un rango
+let multiSelectIndices = [];    // índices marcados manualmente con checkbox (no necesariamente consecutivos)
+let lastSearchType = null;      // 'palabra' actualmente paginable
+let lastSearchQuery = '';
+let currentPage = 1;
+let totalPages = 1;
+let bc = null;
+let history = [];
+
+/* =========================================================================
+   NAVEGACIÓN ENTRE VISTAS
+   ========================================================================= */
+function showLanding(){
+  document.getElementById('view-landing').style.display = 'flex';
+  document.getElementById('view-operator').classList.remove('active');
+  document.getElementById('view-projector').classList.remove('active');
+}
+function goToOperator(){
+  document.getElementById('view-landing').style.display = 'none';
+  document.getElementById('view-operator').classList.add('active');
+  document.getElementById('view-projector').classList.remove('active');
+  poblarSelectLibros();
+  renderHistory();
+  inicializarControlesDeEstilo();
+  renderMain();
+}
+function goToProjector(){
+  document.getElementById('view-landing').style.display = 'none';
+  document.getElementById('view-operator').classList.remove('active');
+  document.getElementById('view-projector').classList.add('active');
+  setupBroadcastReceiver();
+}
+function openProjectorWindow(){
+  const url = window.location.href.split('#')[0] + '#projector';
+  window.open(url, '_blank', 'noopener');
+}
+window.addEventListener('load', () => {
+  loadHistory();
+  if (window.location.hash === '#projector'){
+    goToProjector();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('view-projector').classList.contains('active') && e.key === 'Escape'){
+    showLanding();
+  }
+});
+
+/* =========================================================================
+   COMUNICACIÓN OPERADOR -> PROYECCIÓN
+   ========================================================================= */
+function getChannel(){
+  if (!bc){ bc = new BroadcastChannel(PROJECTOR_CHANNEL); }
+  return bc;
+}
+function broadcastVerse(text, ref){
+  getChannel().postMessage({ type:'verse', text, ref });
+}
+function broadcastStyle(bgColor, textColor){
+  getChannel().postMessage({ type:'style', bgColor, textColor });
+}
+function setupBroadcastReceiver(){
+  const ch = getChannel();
+  ch.onmessage = (ev) => {
+    if (ev.data && ev.data.type === 'verse'){
+      renderProjectorVerse(ev.data.text, ev.data.ref);
+    } else if (ev.data && ev.data.type === 'style'){
+      aplicarColoresEnProyector(ev.data.bgColor, ev.data.textColor);
+    }
+  };
+  // Al abrir la pantalla de proyección, recupera el último estilo guardado
+  // (por si el operador lo configuró antes de abrir esta ventana).
+  const estiloGuardado = cargarEstiloGuardado();
+  if (estiloGuardado){
+    aplicarColoresEnProyector(estiloGuardado.bgColor, estiloGuardado.textColor);
+  }
+}
+function aplicarColoresEnProyector(bgColor, textColor){
+  const projectorView = document.getElementById('view-projector');
+  const refEl = document.getElementById('projector-ref');
+  if (bgColor) projectorView.style.background = bgColor;
+  if (textColor){
+    document.getElementById('projector-text').style.color = textColor;
+    // la referencia (cita) se queda en el color de acento por contraste, salvo que
+    // el texto principal y el acento naranja queden muy parecidos; en ese caso usamos textColor también.
+    refEl.style.color = textColor;
+  }
+}
+
+/* =========================================================================
+   PERSONALIZACIÓN DE COLORES (panel de operador)
+   ========================================================================= */
+const STYLE_STORAGE_KEY = 'versiculos_estilo_v1';
+const ESTILO_POR_DEFECTO = { bgColor: '#161311', textColor: '#f3eade' };
+
+const PRESETS_COLOR = [
+  { bg:'#161311', text:'#f3eade', nombre:'Cálido oscuro (por defecto)' },
+  { bg:'#000000', text:'#ffffff', nombre:'Blanco sobre negro' },
+  { bg:'#ffffff', text:'#111111', nombre:'Negro sobre blanco' },
+  { bg:'#0a1a2e', text:'#f0c75e', nombre:'Dorado sobre azul noche' },
+  { bg:'#1a0f1a', text:'#e8b4d8', nombre:'Rosa sobre púrpura oscuro' },
+  { bg:'#0d1f17', text:'#9fd9b4', nombre:'Verde menta sobre verde oscuro' },
+];
+
+function cargarEstiloGuardado(){
+  try{
+    const raw = localStorage.getItem(STYLE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function guardarEstilo(bgColor, textColor){
+  localStorage.setItem(STYLE_STORAGE_KEY, JSON.stringify({ bgColor, textColor }));
+}
+
+function aplicarEstiloProyeccion(){
+  const bgColor = document.getElementById('color-fondo').value;
+  const textColor = document.getElementById('color-texto').value;
+  broadcastStyle(bgColor, textColor);
+  guardarEstilo(bgColor, textColor);
+}
+
+function aplicarPreset(bg, text){
+  document.getElementById('color-fondo').value = bg;
+  document.getElementById('color-texto').value = text;
+  aplicarEstiloProyeccion();
+}
+
+function restaurarEstiloPorDefecto(){
+  document.getElementById('color-fondo').value = ESTILO_POR_DEFECTO.bgColor;
+  document.getElementById('color-texto').value = ESTILO_POR_DEFECTO.textColor;
+  aplicarEstiloProyeccion();
+}
+
+function renderPresets(){
+  const el = document.getElementById('presets-row');
+  if (!el) return;
+  el.innerHTML = PRESETS_COLOR.map(p => `
+    <div class="swatch-preset"
+         style="background:linear-gradient(135deg, ${p.bg} 50%, ${p.text} 50%);"
+         title="${escapeHtml(p.nombre)}"
+         onclick="aplicarPreset('${p.bg}', '${p.text}')"></div>
+  `).join('');
+}
+
+// Al entrar al panel de operador, recuperamos el último estilo elegido para
+// que los color pickers reflejen lo que ya está configurado, en vez de
+// siempre reiniciar a los valores por defecto.
+function inicializarControlesDeEstilo(){
+  const guardado = cargarEstiloGuardado();
+  if (guardado){
+    document.getElementById('color-fondo').value = guardado.bgColor;
+    document.getElementById('color-texto').value = guardado.textColor;
+  }
+  renderPresets();
+}
+function renderProjectorVerse(text, ref){
+  const textEl = document.getElementById('projector-text');
+  const refEl = document.getElementById('projector-ref');
+  textEl.classList.add('fade');
+  refEl.classList.add('fade');
+  setTimeout(() => {
+    if (text && text.trim()){
+      textEl.textContent = text;
+      textEl.classList.remove('projector-empty');
+      refEl.textContent = ref || '';
+      ajustarTamanoProyeccion(text.length);
+    } else {
+      textEl.textContent = 'Esperando versículo…';
+      textEl.classList.add('projector-empty');
+      refEl.textContent = '';
+    }
+    textEl.classList.remove('fade');
+    refEl.classList.remove('fade');
+  }, 180);
+}
+
+// Reduce el tamaño de fuente cuando el pasaje es largo (rangos de varios
+// versículos), para que siga cabiendo en pantalla sin desbordarse.
+function ajustarTamanoProyeccion(largoTexto){
+  const textEl = document.getElementById('projector-text');
+  if (largoTexto > 700){
+    textEl.style.fontSize = 'clamp(1.1rem, 2.4vw, 2rem)';
+  } else if (largoTexto > 400){
+    textEl.style.fontSize = 'clamp(1.4rem, 3vw, 2.6rem)';
+  } else if (largoTexto > 220){
+    textEl.style.fontSize = 'clamp(1.6rem, 3.6vw, 3.1rem)';
+  } else {
+    textEl.style.fontSize = ''; // tamaño normal definido en CSS
+  }
+}
+
+/* =========================================================================
+   HISTORIAL (recientes)
+   ========================================================================= */
+function loadHistory(){
+  try{
+    const raw = localStorage.getItem(HISTORY_KEY);
+    history = raw ? JSON.parse(raw) : [];
+  }catch(e){ history = []; }
+}
+function saveHistory(){
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+function pushHistory(refLabel, libroSlug, capitulo, numero, numeroFin){
+  history = history.filter(h => h.refLabel !== refLabel); // sin duplicados
+  history.unshift({ refLabel, libroSlug, capitulo, numero, numeroFin: numeroFin || null });
+  if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+  saveHistory();
+  renderHistory();
+}
+function renderHistory(){
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  if (history.length === 0){
+    el.innerHTML = '<div class="results-empty" style="padding:0.3rem;">Aún no hay versículos recientes.</div>';
+    return;
+  }
+  el.innerHTML = history.map((h, i) => `
+    <div class="history-item" onclick="irAHistorial(${i})">${escapeHtml(h.refLabel)}</div>
+  `).join('');
+}
+function irAHistorial(i){
+  const h = history[i];
+  if (!h) return;
+  cargarCapitulo(h.libroSlug, h.capitulo, h.numero, h.numeroFin);
+}
+
+/* =========================================================================
+   FORMULARIO: TABS
+   ========================================================================= */
+function switchTab(tab){
+  document.getElementById('tab-cita').classList.toggle('active', tab === 'cita');
+  document.getElementById('tab-palabra').classList.toggle('active', tab === 'palabra');
+  document.getElementById('form-cita').style.display = tab === 'cita' ? 'flex' : 'none';
+  document.getElementById('form-palabra').style.display = tab === 'palabra' ? 'flex' : 'none';
+}
+function poblarSelectLibros(){
+  const sel = document.getElementById('select-libro');
+  if (sel.options.length > 0) return; // ya poblado
+  sel.innerHTML = LIBROS.map(l => `<option value="${l.n}">${l.t}</option>`).join('');
+}
+
+/* =========================================================================
+   BÚSQUEDA POR CITA — GetBible Query API
+   Formato: GET /v2/rvr60/{Libro capítulo:versículo-versículo}
+   La API devuelve un objeto con claves dinámicas por versículo.
+   ========================================================================= */
+async function buscarPorCita(){
+  const libroNombre = document.getElementById('select-libro').value;
+  const capitulo    = parseInt(document.getElementById('input-capitulo').value, 10);
+  const versiculoRaw = document.getElementById('input-versiculo').value.trim();
+
+  if (!capitulo || capitulo < 1){
+    mostrarError('Ingresa un número de capítulo válido.');
+    return;
+  }
+
+  mostrarCargando();
+  try{
+    // Construimos la referencia: "Juan 3" para capítulo completo, o "Juan 3:16" / "Juan 3:16-18" para versículo
+    let referencia = `${libroNombre} ${capitulo}`;
+    if (versiculoRaw) referencia += `:${versiculoRaw}`;
+
+    const url = `${GETBIBLE_BASE}/${VERSION_GB}/${encodeURIComponent(referencia)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('No se encontró esa cita. Revisa el libro, capítulo y versículo.');
+    const data = await resp.json();
+
+    // Normalizar respuesta de GetBible a formato interno {number, verse}
+    const verses = normalizarGetBible(data);
+    if (!verses || verses.length === 0) throw new Error('Esa cita no devolvió versículos.');
+
+    // Obtener nombre de libro y capítulo real desde la respuesta
+    const primeraClave = Object.keys(data)[0];
+    const metaCapitulo = data[primeraClave];
+    const libroReal = metaCapitulo?.book_name || libroNombre;
+    const capReal   = metaCapitulo?.chapter    || capitulo;
+
+    activeChapterVerses = verses;
+    activeChapterRef = { libro: libroReal, libroSlug: libroNombre, capitulo: capReal };
+    multiSelectIndices = [];
+    activeVerseIndex = 0;
+    rangeSelectMode = false;
+    activeRangeEndIndex = -1;
+
+    // Si buscó un rango (ej. 16-18), marcar el rango visualmente
+    if (versiculoRaw && versiculoRaw.includes('-')){
+      activeRangeEndIndex = verses.length - 1;
+    }
+
+    mostrarResultadosVacios();
+    proyectarVersiculoActivo();
+    renderMain();
+  }catch(err){
+    mostrarError(err.message || 'Ocurrió un error al buscar la cita.');
+  }
+}
+
+/* =========================================================================
+   BÚSQUEDA POR PALABRA — sin paginación (GetBible no tiene búsqueda de texto)
+   Usamos una búsqueda local entre los versículos ya cargados, y como fallback
+   mostramos un mensaje explicando cómo buscar por cita exacta.
+   ========================================================================= */
+async function buscarPorPalabra(pagina){
+  const palabra = document.getElementById('input-palabra').value.trim();
+  if (!palabra){
+    mostrarError('Escribe una palabra o frase para buscar.');
+    return;
+  }
+
+  // GetBible Query API no tiene endpoint de búsqueda por palabra — le decimos
+  // al operador cómo buscar usando la cita directa, que es más rápido en vivo.
+  const listEl  = document.getElementById('results-list');
+  const metaEl  = document.getElementById('results-meta');
+  const pagerEl = document.getElementById('pager');
+  metaEl.textContent = '';
+  pagerEl.style.display = 'none';
+  listEl.innerHTML = `
+    <div class="results-empty" style="line-height:1.7;">
+      <b>La búsqueda por palabra no está disponible en esta versión de la API.</b><br><br>
+      Para proyectar un versículo en el servicio, usa la pestaña <b>"Buscar por cita"</b>:
+      selecciona el libro, el capítulo y el número del versículo.<br><br>
+      <span style="font-size:0.82rem;opacity:0.8;">Ejemplo: Juan · capítulo 3 · versículo 16</span>
+    </div>`;
+}
+
+function cambiarPagina(delta){
+  // Sin paginación en la nueva API — no hace nada
+}
+
+function renderResultadosBusqueda(data){
+  // Función legada — ya no se usa con la nueva API
+}
+
+async function seleccionarResultadoBusqueda(i){
+  // Función legada — ya no se usa con la nueva API
+}
+
+/* =========================================================================
+   NORMALIZAR RESPUESTA DE GETBIBLE
+   Convierte el objeto de GetBible al formato interno [{number, verse}]
+   ========================================================================= */
+function normalizarGetBible(data){
+  const verses = [];
+  for (const capKey of Object.keys(data)){
+    const capData = data[capKey];
+    if (!capData || !capData.verses) continue;
+    for (const vKey of Object.keys(capData.verses)){
+      const v = capData.verses[vKey];
+      verses.push({ number: v.verse, verse: v.text.trim() });
+    }
+  }
+  // Ordenar por número de versículo
+  verses.sort((a, b) => a.number - b.number);
+  return verses;
+}
+
+/* =========================================================================
+   CARGAR UN CAPÍTULO COMPLETO (usado por historial)
+   ========================================================================= */
+async function cargarCapitulo(libroSlug, capitulo, numeroVersiculo, numeroVersiculoFin){
+  mostrarCargando();
+  try{
+    const referencia = `${libroSlug} ${capitulo}`;
+    const url = `${GETBIBLE_BASE}/${VERSION_GB}/${encodeURIComponent(referencia)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('No se pudo cargar ese capítulo.');
+    const data = await resp.json();
+
+    const verses = normalizarGetBible(data);
+    if (!verses || verses.length === 0) throw new Error('Capítulo sin versículos.');
+
+    const primeraClave = Object.keys(data)[0];
+    const meta = data[primeraClave];
+
+    activeChapterVerses = verses;
+    activeChapterRef = { libro: meta?.book_name || libroSlug, libroSlug, capitulo };
+    multiSelectIndices = [];
+
+    const idx = verses.findIndex(v => v.number === numeroVersiculo);
+    activeVerseIndex = idx >= 0 ? idx : 0;
+    rangeSelectMode = false;
+
+    if (numeroVersiculoFin != null){
+      const endIdx = verses.findIndex(v => v.number === numeroVersiculoFin);
+      activeRangeEndIndex = (endIdx > activeVerseIndex) ? endIdx : -1;
+    } else {
+      activeRangeEndIndex = -1;
+    }
+
+    proyectarVersiculoActivo();
+    renderMain();
+  }catch(err){
+    mostrarError(err.message || 'Ocurrió un error al cargar el capítulo.');
+  }
+}
+
+/* =========================================================================
+   PROYECCIÓN DEL VERSÍCULO ACTIVO (soporta un solo versículo o un rango)
+   ========================================================================= */
+function proyectarVersiculoActivo(){
+  if (activeVerseIndex < 0 || !activeChapterVerses[activeVerseIndex]) return;
+
+  const tieneRango = activeRangeEndIndex > activeVerseIndex;
+  const vStart = activeChapterVerses[activeVerseIndex];
+
+  if (!tieneRango){
+    const refLabel = `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${vStart.number}`;
+    broadcastVerse(vStart.verse, refLabel);
+    pushHistory(refLabel, activeChapterRef.libroSlug, activeChapterRef.capitulo, vStart.number, null);
+    document.getElementById('footer-ref').textContent = refLabel;
+    return;
+  }
+
+  // Rango: unimos el texto de todos los versículos, cada uno con su número,
+  // para que se proyecten juntos como un solo pasaje.
+  const vEnd = activeChapterVerses[activeRangeEndIndex];
+  const versesInRange = activeChapterVerses.slice(activeVerseIndex, activeRangeEndIndex + 1);
+  const textoCombinado = versesInRange.map(v => `${v.number}. ${v.verse}`).join('\n\n');
+  const refLabel = `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${vStart.number}-${vEnd.number}`;
+
+  broadcastVerse(textoCombinado, refLabel);
+  pushHistory(refLabel, activeChapterRef.libroSlug, activeChapterRef.capitulo, vStart.number, vEnd.number);
+  document.getElementById('footer-ref').textContent = refLabel;
+}
+
+function moverVersiculo(delta){
+  if (activeChapterVerses.length === 0) return;
+  let next = activeVerseIndex + delta;
+  next = Math.max(0, Math.min(activeChapterVerses.length - 1, next));
+  activeVerseIndex = next;
+  activeRangeEndIndex = -1; // moverse versículo a versículo cancela cualquier rango activo
+  rangeSelectMode = false;
+  proyectarVersiculoActivo();
+  renderMain();
+}
+
+function saltarAVersiculo(idx){
+  if (rangeSelectMode && idx > activeVerseIndex){
+    // segundo clic en modo "seleccionar rango": fija el final del rango
+    activeRangeEndIndex = idx;
+    rangeSelectMode = false;
+    proyectarVersiculoActivo();
+    renderMain();
+    return;
+  }
+  activeVerseIndex = idx;
+  activeRangeEndIndex = -1;
+  rangeSelectMode = false;
+  proyectarVersiculoActivo();
+  renderMain();
+}
+
+function iniciarSeleccionRango(){
+  if (activeVerseIndex < 0) return;
+  rangeSelectMode = true;
+  activeRangeEndIndex = -1;
+  renderMain();
+}
+function cancelarSeleccionRango(){
+  rangeSelectMode = false;
+  activeRangeEndIndex = -1;
+  proyectarVersiculoActivo();
+  renderMain();
+}
+
+/* =========================================================================
+   SELECCIÓN MÚLTIPLE LIBRE (versículos sueltos, no necesariamente consecutivos)
+   ========================================================================= */
+function toggleMultiSelect(idx){
+  const pos = multiSelectIndices.indexOf(idx);
+  if (pos >= 0){
+    multiSelectIndices.splice(pos, 1);
+  } else {
+    multiSelectIndices.push(idx);
+  }
+  // activar checkboxes cancela cualquier rango en curso, para no mezclar los dos modos
+  rangeSelectMode = false;
+  activeRangeEndIndex = -1;
+  renderMain();
+}
+
+function limpiarMultiSelect(){
+  multiSelectIndices = [];
+  renderMain();
+}
+
+function proyectarMultiSelect(){
+  if (multiSelectIndices.length === 0) return;
+  // Proyectamos en el orden en que aparecen en el capítulo, no en el orden de clic,
+  // para que el pasaje se lea de forma natural sin importar cómo los fue marcando el operador.
+  const indicesOrdenados = [...multiSelectIndices].sort((a, b) => a - b);
+  const versesSeleccionados = indicesOrdenados.map(i => activeChapterVerses[i]);
+  const textoCombinado = versesSeleccionados.map(v => `${v.number}. ${v.verse}`).join('\n\n');
+
+  const numeros = versesSeleccionados.map(v => v.number);
+  const refLabel = `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${numeros.join(', ')}`;
+
+  broadcastVerse(textoCombinado, refLabel);
+  pushHistory(refLabel, activeChapterRef.libroSlug, activeChapterRef.capitulo, numeros[0], null);
+  document.getElementById('footer-ref').textContent = refLabel;
+}
+
+/* =========================================================================
+   RENDER PANEL PRINCIPAL
+   ========================================================================= */
+function renderMain(){
+  const main = document.getElementById('op-main');
+
+  if (!activeChapterRef || activeChapterVerses.length === 0){
+    main.innerHTML = `
+      <div class="no-verse-msg">
+        <h2>Busca una cita o una palabra</h2>
+        <p>Usa el panel de la izquierda para encontrar un versículo y proyectarlo.</p>
+      </div>`;
+    return;
+  }
+
+  const tieneRango = activeRangeEndIndex > activeVerseIndex;
+  const vStart = activeChapterVerses[activeVerseIndex];
+
+  let refLabel, textoTarjeta;
+  if (tieneRango){
+    const vEnd = activeChapterVerses[activeRangeEndIndex];
+    refLabel = `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${vStart.number}-${vEnd.number}`;
+    textoTarjeta = activeChapterVerses
+      .slice(activeVerseIndex, activeRangeEndIndex + 1)
+      .map(v => `<sup style="color:var(--accent);font-size:0.65em;">${v.number}</sup> ${escapeHtml(v.verse)}`)
+      .join(' ');
+  } else {
+    refLabel = `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${vStart.number}`;
+    textoTarjeta = escapeHtml(vStart.verse);
+  }
+
+  const avisoModoRango = rangeSelectMode
+    ? `<div class="error-msg" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;color:var(--ink-warm);">
+         Modo "seleccionar rango" activo: haz clic en el versículo donde quieres que <b>termine</b> el pasaje, dentro del contexto de abajo.
+         <button class="btn" style="margin-top:0.5rem;" onclick="cancelarSeleccionRango()">Cancelar</button>
+       </div>`
+    : '';
+
+  const barraMultiSelect = multiSelectIndices.length > 0
+    ? `<div class="multi-select-bar active">
+         <span>${multiSelectIndices.length} versículo${multiSelectIndices.length > 1 ? 's' : ''} marcado${multiSelectIndices.length > 1 ? 's' : ''} con casilla</span>
+         <div style="display:flex;gap:0.4rem;">
+           <button class="btn" onclick="limpiarMultiSelect()">Limpiar</button>
+           <button class="btn primary" onclick="proyectarMultiSelect()">Proyectar juntos →</button>
+         </div>
+       </div>`
+    : '';
+
+  main.innerHTML = `
+    <div class="active-verse-card">
+      <div class="ref-label">${escapeHtml(refLabel)}</div>
+      <div class="verse-text">${textoTarjeta}</div>
+    </div>
+
+    ${avisoModoRango}
+    ${barraMultiSelect}
+
+    <div class="passage-controls">
+      <button class="btn" onclick="moverVersiculo(-1)" ${(activeVerseIndex <= 0 || tieneRango) ? 'disabled' : ''}>← Versículo anterior</button>
+      <button class="btn" onclick="moverVersiculo(1)" ${(activeVerseIndex >= activeChapterVerses.length - 1 || tieneRango) ? 'disabled' : ''}>Versículo siguiente →</button>
+      ${tieneRango
+        ? `<button class="btn" onclick="cancelarSeleccionRango()">Quitar rango (volver a un solo versículo)</button>`
+        : `<button class="btn" onclick="iniciarSeleccionRango()" ${rangeSelectMode ? 'disabled' : ''}>+ Seleccionar rango</button>`
+      }
+    </div>
+
+    <div class="chapter-context">
+      <div class="label">${escapeHtml(activeChapterRef.libro)} ${activeChapterRef.capitulo} — capítulo completo · marca casillas para proyectar varios versículos sueltos juntos</div>
+      ${activeChapterVerses.map((vv, i) => {
+        const enRango = tieneRango && i >= activeVerseIndex && i <= activeRangeEndIndex;
+        const esActivoSimple = !tieneRango && i === activeVerseIndex;
+        const marcado = multiSelectIndices.includes(i);
+        return `
+        <div class="ctx-verse-row ${enRango || esActivoSimple ? 'current' : ''} ${marcado ? 'checked' : ''}">
+          <input type="checkbox" ${marcado ? 'checked' : ''} onclick="event.stopPropagation(); toggleMultiSelect(${i})">
+          <span class="vtext" onclick="saltarAVersiculo(${i})">
+            <span class="vnum">${vv.number}</span>${escapeHtml(vv.verse)}
+          </span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function mostrarCargando(){
+  document.getElementById('results-list').innerHTML = '<div class="loading-spinner">Buscando…</div>';
+  document.getElementById('pager').style.display = 'none';
+}
+function mostrarError(msg){
+  document.getElementById('results-list').innerHTML = `<div class="error-msg">${escapeHtml(msg)}</div>`;
+  document.getElementById('pager').style.display = 'none';
+}
+function mostrarResultadosVacios(){
+  document.getElementById('results-list').innerHTML = '<div class="results-empty">Capítulo cargado. Usa el contexto de la derecha para navegar entre versículos.</div>';
+  document.getElementById('results-meta').textContent = '';
+  document.getElementById('pager').style.display = 'none';
+}
+function mostrarAvisoVersiculoNoEncontrado(numero){
+  document.getElementById('results-list').innerHTML =
+    `<div class="error-msg">El versículo ${numero} no existe en ese capítulo (puede que la numeración de esta edición sea distinta). Se cargó el capítulo completo desde el versículo 1 — revisa el contexto de la derecha.</div>`;
+  document.getElementById('results-meta').textContent = '';
+  document.getElementById('pager').style.display = 'none';
+}
+
+/* =========================================================================
+   UTILIDADES
+   ========================================================================= */
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+function truncar(str, n){
+  if (!str) return '';
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+/* =========================================================================
+   ATAJOS DE TECLADO
+   ========================================================================= */
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('view-operator').classList.contains('active')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.code === 'ArrowRight'){
+    e.preventDefault();
+    moverVersiculo(1);
+  } else if (e.code === 'ArrowLeft'){
+    e.preventDefault();
+    moverVersiculo(-1);
+  }
+});
+
+// Permitir buscar con Enter dentro de los inputs de cita/palabra
+document.addEventListener('DOMContentLoaded', () => {
+  const capInput = document.getElementById('input-capitulo');
+  const verInput = document.getElementById('input-versiculo');
+  const palInput = document.getElementById('input-palabra');
+  [capInput, verInput].forEach(el => el && el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') buscarPorCita();
+  }));
+  if (palInput) palInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') buscarPorPalabra(1);
+  });
+});
+</script>
+</body>
+</html>

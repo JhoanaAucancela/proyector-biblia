@@ -770,6 +770,7 @@ function goToOperator(){
   poblarSelectLibros();
   renderHistory();
   inicializarControlesDeEstilo();
+  restaurarUltimoVersiculoActivo();
   renderMain();
 }
 function goToProjector(){
@@ -817,6 +818,14 @@ function setupBroadcastReceiver(){
     } else if (ev.data && ev.data.type === 'style'){
       aplicarEstiloEnProyector(ev.data.estilo);
     }
+  };
+  // Al abrir la pantalla de proyección, recupera el último estilo guardado
+  // (por si el operador lo configuró antes de abrir esta ventana).
+  const estiloGuardado = cargarEstiloGuardado();
+  if (estiloGuardado){
+    aplicarEstiloEnProyector(estiloGuardado);
+  }
+}
 
 /* =========================================================================
    WEBSOCKET — control desde celular en la misma red
@@ -860,14 +869,6 @@ function manejarComandoWSBiblia(msg){
     document.getElementById('input-capitulo').value = msg.capitulo;
     document.getElementById('input-versiculo').value = msg.versiculo || '';
     buscarPorCita();
-  }
-}
-  };
-  // Al abrir la pantalla de proyección, recupera el último estilo guardado
-  // (por si el operador lo configuró antes de abrir esta ventana).
-  const estiloGuardado = cargarEstiloGuardado();
-  if (estiloGuardado){
-    aplicarEstiloEnProyector(estiloGuardado);
   }
 }
 function aplicarEstiloEnProyector(estilo){
@@ -1321,6 +1322,44 @@ async function seleccionarResultadoLocal(i){
 /* =========================================================================
    CARGAR CAPÍTULO COMPLETO (usado por historial y resultados de búsqueda)
    ========================================================================= */
+// Si el panel de operador se abre (o se recarga) sin haber buscado nada
+// todavía en esta sesión del navegador, pero ya existe historial reciente
+// (probablemente porque la pantalla de proyección sigue mostrando ese
+// versículo desde antes de recargar), lo restauramos aquí SOLO para que el
+// panel lo muestre — sin volver a enviarlo a la proyección, así no se
+// interrumpe ni se reinicia la animación de lo que ya está en pantalla.
+function restaurarUltimoVersiculoActivo(){
+  if (activeChapterRef) return; // ya hay algo activo en esta sesión, no tocar
+  if (!history || history.length === 0) return;
+
+  const h = history[0];
+  const libroIdx = parseInt(h.libroSlug, 10);
+  const verses = obtenerCapituloLocal(libroIdx, h.capitulo);
+  if (!verses || verses.length === 0) return;
+
+  activeChapterVerses = verses;
+  activeChapterRef    = { libro: LIBROS[libroIdx]?.t || '', libroSlug: h.libroSlug, capitulo: h.capitulo };
+  multiSelectIndices  = [];
+  rangeSelectMode     = false;
+
+  const idx = verses.findIndex(v => v.number === h.numero);
+  activeVerseIndex = idx >= 0 ? idx : 0;
+
+  if (h.numeroFin != null){
+    const endIdx = verses.findIndex(v => v.number === h.numeroFin);
+    activeRangeEndIndex = (endIdx > activeVerseIndex) ? endIdx : -1;
+  } else {
+    activeRangeEndIndex = -1;
+  }
+
+  const footerEl = document.getElementById('footer-ref');
+  if (footerEl){
+    footerEl.textContent = (activeRangeEndIndex > activeVerseIndex)
+      ? `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${verses[activeVerseIndex].number}-${verses[activeRangeEndIndex].number}`
+      : `${activeChapterRef.libro} ${activeChapterRef.capitulo}:${verses[activeVerseIndex].number}`;
+  }
+}
+
 async function cargarCapitulo(libroSlug, capitulo, numeroVersiculo, numeroVersiculoFin){
   mostrarCargando();
   try{
